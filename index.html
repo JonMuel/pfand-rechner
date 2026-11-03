@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pfand-Rechner</title>
+<meta name="description" content="Pfand-Rechner für den Getränkehandel: Leergut-Annahme und Vollgut-Ausgabe schnell berechnen – mit deutschen Pfandwerten.">
+<meta name="theme-color" content="#14532d">
+<meta name="robots" content="noindex">
+<!-- iOS / Safari: als App auf dem Home-Bildschirm -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pfand">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-mode="leer">
+
+<header class="topbar">
+  <div class="brand">
+    <img src="icons/icon.svg" alt="" width="36" height="36">
+    <span>Pfand<span class="brand-long">-Rechner</span></span>
+  </div>
+  <div class="topbar-actions">
+    <button type="button" class="icon-btn" id="btn-undo" aria-label="Rückgängig" disabled>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+      <span>Zurück</span>
+    </button>
+    <button type="button" class="icon-btn" id="btn-settings" aria-label="Einstellungen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      <span>Preise</span>
+    </button>
+  </div>
+</header>
+
+<nav class="modes" role="tablist" aria-label="Vorgang">
+  <button type="button" role="tab" class="mode mode-leer" data-mode="leer" aria-selected="true">
+    <span class="mode-title">Leergut-Annahme</span>
+    <span class="mode-sum" id="sum-leer">0,00 €</span>
+  </button>
+  <button type="button" role="tab" class="mode mode-voll" data-mode="voll" aria-selected="false">
+    <span class="mode-title">Vollgut-Ausgabe</span>
+    <span class="mode-sum" id="sum-voll">0,00 €</span>
+  </button>
+</nav>
+
+<div class="install-hint" id="install-hint" hidden>
+  <p><strong>Als App nutzen:</strong> In Safari unten auf <b>Teilen</b>
+    <svg viewBox="0 0 24 24" class="inline-ico" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v8h14v-8"/></svg>
+    tippen und <b>„Zum Home-Bildschirm"</b> wählen.</p>
+  <button type="button" class="hint-close" id="hint-close" aria-label="Hinweis schließen">✕</button>
+</div>
+
+<main id="catalog" class="catalog" aria-live="off"></main>
+
+<footer class="summary" id="summary">
+  <div class="summary-saldo">
+    <span class="saldo-label" id="saldo-label">Ausgeglichen</span>
+    <span class="saldo-value" id="saldo-value">0,00 €</span>
+  </div>
+  <div class="summary-actions">
+    <button type="button" class="btn btn-ghost" id="btn-receipt">Beleg</button>
+    <button type="button" class="btn btn-danger" id="btn-new">Neu</button>
+  </div>
+</footer>
+
+<!-- Ziffernblock -->
+<div class="sheet-backdrop" id="keypad" hidden>
+  <div class="sheet keypad" role="dialog" aria-modal="true" aria-labelledby="keypad-title">
+    <div class="keypad-head">
+      <h2 id="keypad-title">Anzahl</h2>
+      <div class="keypad-display" id="keypad-display">0</div>
+    </div>
+    <div class="keypad-grid">
+      <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button>
+      <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button>
+      <button type="button" data-key="7">7</button><button type="button" data-key="8">8</button><button type="button" data-key="9">9</button>
+      <button type="button" data-key="C" class="k-alt">C</button><button type="button" data-key="0">0</button><button type="button" data-key="back" class="k-alt" aria-label="Löschen">⌫</button>
+    </div>
+    <div class="keypad-foot">
+      <button type="button" class="btn btn-ghost" data-key="cancel">Abbrechen</button>
+      <button type="button" class="btn btn-primary" data-key="ok">Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Beleg -->
+<div class="sheet-backdrop" id="receipt" hidden>
+  <div class="sheet sheet-tall" role="dialog" aria-modal="true" aria-labelledby="receipt-title">
+    <div class="sheet-head">
+      <h2 id="receipt-title">Beleg</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Schließen">✕</button>
+    </div>
+    <div class="sheet-body" id="receipt-body"></div>
+    <div class="sheet-foot">
+      <button type="button" class="btn btn-ghost" id="btn-ware">Warenwert eingeben</button>
+      <button type="button" class="btn btn-primary" id="btn-print">Drucken</button>
+    </div>
+  </div>
+</div>
+
+<!-- Einstellungen -->
+<div class="sheet-backdrop" id="settings" hidden>
+  <div class="sheet sheet-tall" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="sheet-head">
+      <h2 id="settings-title">Pfandwerte &amp; Artikel</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Schließen">✕</button>
+    </div>
+    <div class="sheet-body">
+      <p class="muted">Pfandwerte für Ihren Markt anpassen. Komplette Kästen werden automatisch aus Kasten + Flaschen berechnet. Ausgeblendete Artikel erscheinen nicht im Rechner.</p>
+      <div id="settings-list"></div>
+
+      <h3>Eigenen Artikel hinzufügen</h3>
+      <form id="custom-form" class="custom-form" autocomplete="off">
+        <label>Bezeichnung
+          <input type="text" name="name" required maxlength="40" placeholder="z. B. Sixpack-Träger">
+        </label>
+        <label>Pfand in €
+          <input type="text" name="price" required inputmode="decimal" placeholder="0,50">
+        </label>
+        <label>Bild
+          <select name="img" id="custom-img"></select>
+        </label>
+        <button type="submit" class="btn btn-primary">Hinzufügen</button>
+      </form>
+
+      <button type="button" class="btn btn-ghost btn-block" id="btn-defaults">Alle Standardwerte wiederherstellen</button>
+      <p class="muted small">Stand der Standardwerte: deutsches Pfandsystem (Einweg 0,25 € nach VerpackG; Mehrweg-Richtwerte der Branche). Mehrwegpfand kann je nach Abfüller abweichen – bitte mit Ihrem Lieferanten abgleichen.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div id="print-area" class="print-area" aria-hidden="true"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
